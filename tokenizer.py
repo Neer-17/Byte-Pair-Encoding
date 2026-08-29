@@ -57,6 +57,12 @@ class Tokenizer:
         self.merges = []
         self.num_merges = merges
         self.min_pair_freq = min_pair_freq
+
+        self.encoded_vocab = {}
+        self.decoded_vocab = {}
+        self.oov_cache = {}
+
+        self.trained = False
     def tokenize(self):
         """
         Run BPE training: repeatedly find the most frequent adjacent
@@ -104,9 +110,94 @@ class Tokenizer:
                     self.word_tokens[word] = chars_copy
 
                 self.vocabulary.append(str_comb)
-                self.merges.append((max_key,str_comb))
+                self.merges.append((str_comb,max_key))
 
             else:
                 # No pair occurs frequently enough to be worth merging further.
                 break
+        self.vocabulary.append('</unk>') # Adds the </unk> character for unknown values.
+        
+        for token_id,token in enumerate(self.vocabulary):
+            self.encoded_vocab[token] = token_id
+            self.decoded_vocab[token_id] = token
+
+        self.trained = True
         return self.vocabulary,self.merges
+    
+    def encode(self,script):
+        """ 
+        Convert a raw text string into a sequence of token IDs, using the
+        vocabulary and merge rules learned during training.
+        Args:
+            script: raw input text to encode.
+
+        Returns:
+            A list of integer token IDs representing the input text.
+
+        Raises:
+            RuntimeError: if called before tokenize() has been run.
+        """
+        if self.trained:
+            tokens = script.split()
+            tokens = [t+'</w>' for t in tokens]
+            output = []
+            for word in tokens:
+                if word in self.encoded_vocab:
+                    output.append(self.encoded_vocab[word])
+                elif word in self.oov_cache:
+                    output.extend(self.oov_cache[word])
+                else:
+                    valid_tokens = [i for i in self.merges if i[0] in word]
+                    word_copy = list(word[:-4])+['</w>']
+                    i = 0
+                    while((len(word_copy)>=2) and (i<len(valid_tokens))):
+                        word_copy2 = []
+                        k = 0
+                        l = 0
+                        comb = valid_tokens[i][0]
+                        while(l<len(word_copy)-1):
+                            if (word_copy[l],word_copy[l+1]) == valid_tokens[i][-1]:
+                                word_copy2.extend(word_copy[k:l])
+                                word_copy2.append(comb)
+                                k = l+2
+                                l += 1
+                            l+=1
+                        word_copy2.extend(word_copy[k:])
+                        word_copy = word_copy2
+                        i+=1
+                    token_vals = []
+                    for token in word_copy:
+                        try:
+                            token_vals.append(self.encoded_vocab[token])
+                        except KeyError:
+                            token_vals.append(self.encoded_vocab['</unk>'])
+                    output.extend(token_vals)
+                    self.oov_cache[word] = token_vals
+            return output
+        else:
+            raise RuntimeError("Vocabulary is empty. Please Tokenize before encoding/decoding")
+
+    def decode(self,en_script):
+        """
+    Convert a sequence of token IDs back into a text string.
+
+    Args:
+        en_script: a list of integer token IDs, as produced by encode().
+
+    Returns:
+        The decoded text string.
+
+    Raises:
+        RuntimeError: if called before tokenize() has been run.
+        KeyError: if en_script contains an ID not present in the
+            trained vocabulary.
+    """
+        if self.trained:
+            output = []
+            for val in en_script:
+                if val in self.decoded_vocab:
+                    output.append(self.decoded_vocab[val])
+            output = ''.join(output).replace('</w>',' ').strip()
+            return output
+        else:
+            raise RuntimeError("Vocabulary is empty. Please Tokenize before encoding/decoding")
