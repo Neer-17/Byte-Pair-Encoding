@@ -36,24 +36,30 @@ vocabulary, merges = tokenizer.tokenize()
 
 print(vocabulary)  # all learned tokens, from single characters to merged subwords
 print(merges)      # ordered list of (pair, merged_token) rules learned during training
+
+script = "Encode the given script"
+en_script = tokenizer.encode(script)
+de_script = tokenizer.decode(en_script)
+print(en_script)
+print(de_script)
+
 ```
 
 ### Parameters
 
 - `text` — the raw training corpus (a string).
 - `merges` — the maximum number of merge operations to perform. Training may stop earlier if no pair occurs frequently enough to be worth merging (controlled internally by `min_pair_freq`).
-
+- `script` - the script to encode (a string).
 ### Output
 
 - `vocabulary` — a list of every token the tokenizer knows, from the initial character-level alphabet up through every learned subword/whole-word merge.
 - `merges` — the ordered list of merge rules `(pair, merged_token)` learned during training. The order matters: it reflects the sequence in which merges must be replayed to consistently tokenize new text.
-
+- `encoded script` - a list of encoded characters of the script.
+- `decoded script` - a string of decoded values of encoded list of a script.
 ## Current limitations / roadmap
 
 This repo currently implements **training only**. Planned/possible next steps:
 
-- **`encode(text)`** — apply the learned, ordered merge rules to tokenize new, unseen text.
-- **`decode(tokens)`** — reconstruct original text from a sequence of tokens.
 - **Punctuation-aware pre-tokenization** — currently splitting is whitespace-only (`text.split()`), so punctuation stays attached to words (e.g. `"lord,"` and `"lord"` are learned as separate units). A regex-based word/punctuation splitter would reduce redundant vocabulary entries.
 - **Incremental pair-count updates** — pair counts are currently recomputed from scratch each merge iteration; updating counts only near the positions that changed after a merge would speed up training on larger corpora.
 
