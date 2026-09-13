@@ -1,4 +1,5 @@
 from collections import Counter
+import string
 
 class Tokenizer:
     """
@@ -30,7 +31,7 @@ class Tokenizer:
             (weighted by word frequency) to be merged; training stops
             early once no pair clears this bar.
     """
-    def __init__(self,text:str,merges:int,min_pair_freq:int=2):
+    def __init__(self,text:str,merges:int,min_pair_freq:int=2,keep_punctuation:bool=True):
         """
         Build initial per-word token sequences and starting vocabulary
         from the raw corpus text.
@@ -39,9 +40,14 @@ class Tokenizer:
             text: the full training corpus.
             merges: maximum number of BPE merge operations to run.
             min_pair_freq: minimum number of appearance of a pair.
+            keep_punctuation: to keep punctuation in text or not.
         """
+        if not(keep_punctuation):
+            text = text.translate(str.maketrans('','',string.punctuation))
+
         self.word_count = Counter(text.split())
         self.word_tokens = {}
+
         for word in self.word_count.keys():
             chars = list(word)
             chars.append('</w>') # marks word-end so merges can't cross word boundaries
