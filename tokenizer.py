@@ -207,3 +207,10 @@ class Tokenizer:
             return output
         else:
             raise RuntimeError("Vocabulary is empty. Please Tokenize before encoding/decoding")
+
+    def set_attr(self,vocab,merges,en_vocab,de_vocab):
+        self.vocabulary = vocab
+        self.merges = merges
+        self.encoded_vocab = en_vocab
+        self.decoded_vocab = de_vocab
+        self.trained = True

@@ -93,43 +93,13 @@ Y_train = Y_train.to(device)
 X_val = X_val.to(device)
 Y_val = Y_val.to(device)
 
+
 #Train function
-def train(model,X_train,Y_train,X_val,Y_val,batch_size):
-        num_batches = len(X_train)//batch_size
-        for epoch in range(model.epochs):
-            total_loss = 0
-            for i in range(0,len(X_train),batch_size):
-                # print(f"Epoch: {epoch} | Batch: {i//batch_size}")
-                x,y = get_batch(X_train,Y_train,batch_size)
-                x = x.to(device)
-                y = y.to(device)
-                model.optimizer.zero_grad()
-                y_pred = model.forward(x)
-                y_true = y.view(-1)
-                loss = model.criterion(y_pred,y_true)
-                total_loss += loss
-                loss.backward()
-                model.optimizer.step()
-            if (epoch%10 == 0):
-                model.eval()
-
-                with torch.no_grad():
-                    x,y = get_batch(X_val,Y_val,batch_size)
-                    x = x.to(device)
-                    y = y.to(device)
-                    output = model.forward(x)
-                    y = y.view(-1)
-                    val_loss = model.criterion(output,y)
-                    print(f"Epoch: {epoch} | Train loss: {total_loss/num_batches:.4f} | Val loss: {val_loss:.4f}")
-                model.train()
-
-#Parameters
 def train(model,X_train,Y_train,X_val,Y_val,batch_size,epochs):
         num_batches = len(X_train)//batch_size
         for epoch in range(epochs):
             total_loss = 0
             for i in range(0,len(X_train),batch_size):
-                # print(f"Epoch: {epoch} | Batch: {i//batch_size}")
                 x,y = get_batch(X_train,Y_train,batch_size)
                 x = x.to(device)
                 y = y.to(device)
